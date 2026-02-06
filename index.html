@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel | Front-Help_UA</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
+        .admin-box { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        h2 { color: #0057b7; text-align: center; margin-bottom: 25px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        select, input { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
+        .btn-update { width: 100%; padding: 15px; background: #0057b7; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .btn-update:active { transform: scale(0.98); }
+        .status { text-align: center; margin-top: 15px; font-size: 14px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="admin-box">
+    <h2>Адмін-панель збору</h2>
+    
+    <label>Оберіть напрямок:</label>
+    <select id="collect-id">
+        <option value="1">🛸 Ударні дрони (ціль 500к)</option>
+        <option value="2">🛡️ Бронитехніка (ціль 5млн)</option>
+        <option value="3">🐾 Pet Recovery (ціль 200к)</option>
+    </select>
+
+    <label>Сума нового донату (₴):</label>
+    <input type="number" id="amount" placeholder="Наприклад: 500">
+
+    <button class="btn-update" onclick="updateDonation()">ОНОВИТИ ПРОГРЕС</button>
+    
+    <div id="status" class="status"></div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+
+    // Твій Firebase Config (той самий, що в основному сайті)
+    const firebaseConfig = {
+        apiKey: "AIzaSyD3BQTZeCp74owFliqECbUgufJ3UC6dFC8",
+        authDomain: "vip-shop-a2ec4.firebaseapp.com",
+        projectId: "vip-shop-a2ec4",
+        databaseURL: "https://vip-shop-a2ec4-default-rtdb.firebaseio.com",
+        appId: "1:429877342673:web:bf2fbcddd5f3ba04c670f0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    window.updateDonation = async () => {
+        const id = document.getElementById('collect-id').value;
+        const amountToAdd = parseInt(document.getElementById('amount').value);
+        const status = document.getElementById('status');
+
+        if (!amountToAdd || amountToAdd <= 0) return alert("Введіть коректну суму!");
+
+        status.innerText = "Оновлення...";
+        status.style.color = "orange";
+
+        try {
+            const dbRef = ref(db, 'zbir_progress/' + id);
+            
+            // 1. Отримуємо поточне значення
+            const snapshot = await get(dbRef);
+            let currentTotal = snapshot.exists() ? snapshot.val() : 0;
+
+            // 2. Додаємо нову суму до існуючої
+            let newTotal = currentTotal + amountToAdd;
+
+            // 3. Записуємо назад в Google Firebase
+            await set(dbRef, newTotal);
+
+            status.innerText = "✅ Успішно оновлено!";
+            status.style.color = "green";
+            document.getElementById('amount').value = "";
+            
+            setTimeout(() => { status.innerText = ""; }, 3000);
+        } catch (e) {
+            status.innerText = "❌ Помилка: " + e.message;
+            status.style.color = "red";
+        }
+    };
+</script>
+
+</body>
+</html>
